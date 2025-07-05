@@ -1,11 +1,152 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, ReactNode } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Github, Linkedin, Mail, ExternalLink, Code, Cpu, Database, Globe, ChevronDown, Send, User, MessageSquare } from "lucide-react"
 import emailjs from '@emailjs/browser'
+import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion"
+
+interface CardData {
+    id: number;
+    img: string;
+}
+
+interface CardRotateProps {
+    children: ReactNode;
+    onSendToBack: () => void;
+    sensitivity: number;
+}
+
+interface StackProps {
+    randomRotation?: boolean;
+    sensitivity?: number;
+    cardDimensions?: { width: number; height: number };
+    cardsData?: CardData[];
+    animationConfig?: { stiffness: number; damping: number };
+    sendToBackOnClick?: boolean;
+}
+
+function CardRotate({ children, onSendToBack, sensitivity }: CardRotateProps) {
+    const x = useMotionValue(0);
+    const y = useMotionValue(0);
+    const rotateX = useTransform(y, [-100, 100], [60, -60]);
+    const rotateY = useTransform(x, [-100, 100], [-60, 60]);
+
+    function handleDragEnd(_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) {
+        if (
+            Math.abs(info.offset.x) > sensitivity ||
+            Math.abs(info.offset.y) > sensitivity
+        ) {
+            onSendToBack();
+        } else {
+            x.set(0);
+            y.set(0);
+        }
+    }
+
+    return (
+        <motion.div
+            className="absolute cursor-grab"
+            style={{ x, y, rotateX, rotateY }}
+            drag
+            dragConstraints={{ top: 0, right: 0, bottom: 0, left: 0 }}
+            dragElastic={0.6}
+            whileTap={{ cursor: "grabbing" }}
+            onDragEnd={handleDragEnd}
+        >
+            {children}
+        </motion.div>
+    );
+}
+
+function Stack({
+    randomRotation = false,
+    sensitivity = 200,
+    cardDimensions = { width: 208, height: 208 },
+    cardsData = [],
+    animationConfig = { stiffness: 260, damping: 20 },
+    sendToBackOnClick = false
+}: StackProps) {
+    const [cards, setCards] = useState<CardData[]>(
+        cardsData.length
+            ? cardsData
+            : [
+                { id: 1, img: "https://images.unsplash.com/photo-1534972195531-d756b9bfa9f2?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
+                { id: 2, img: "https://images.unsplash.com/photo-1536148935331-408321065b18?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
+                { id: 3, img: "https://images.unsplash.com/photo-1523800503107-5bc3ba2a6f81?q=80&w=880&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
+                { id: 4, img: "https://images.unsplash.com/photo-1503252947848-7338d3f92f31?q=80&w=1331&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" }
+            ]
+    );
+
+    const [randomRotations, setRandomRotations] = useState<number[]>([]);
+
+    useEffect(() => {
+        if (randomRotation) {
+            setRandomRotations(cards.map(() => Math.random() * 10 - 5));
+        }
+    }, [randomRotation, cards.length]);
+
+    const sendToBack = (id: number) => {
+        setCards((prev) => {
+            const newCards = [...prev];
+            const index = newCards.findIndex((card) => card.id === id);
+            const [card] = newCards.splice(index, 1);
+            newCards.unshift(card);
+            return newCards;
+        });
+    };
+
+    return (
+        <div
+            className="relative"
+            style={{
+                width: cardDimensions.width,
+                height: cardDimensions.height,
+                perspective: 600,
+            }}
+        >
+            {cards.map((card, index) => {
+                const randomRotate = randomRotation && randomRotations[index] ? randomRotations[index] : 0;
+
+                return (
+                    <CardRotate
+                        key={card.id}
+                        onSendToBack={() => sendToBack(card.id)}
+                        sensitivity={sensitivity}
+                    >
+                        <motion.div
+                            className="rounded-2xl overflow-hidden border-4 border-white"
+                            onClick={() => sendToBackOnClick && sendToBack(card.id)}
+                            animate={{
+                                rotateZ: (cards.length - index - 1) * 4 + randomRotate,
+                                scale: 1 + index * 0.06 - cards.length * 0.06,
+                                transformOrigin: "90% 90%",
+                            }}
+                            initial={false}
+                            transition={{
+                                type: "spring",
+                                stiffness: animationConfig.stiffness,
+                                damping: animationConfig.damping,
+                            }}
+                            style={{
+                                width: cardDimensions.width,
+                                height: cardDimensions.height,
+                            }}
+                        >
+                            <img
+                                src={card.img}
+                                alt={`card-${card.id}`}
+                                className="w-full h-full object-cover pointer-events-none"
+                            />
+                        </motion.div>
+                    </CardRotate>
+                );
+            })}
+        </div>
+    );
+}
 
 export default function Portfolio() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
@@ -161,41 +302,60 @@ export default function Portfolio() {
         {/* Hero Section */}
         <section className="min-h-screen flex items-center justify-center px-4">
           <div
-            className={`text-center transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}
+            className={`max-w-7xl mx-auto grid md:grid-cols-2 gap-12 items-center transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}
           >
-            <div className="mb-8">
-              <h1 className="text-6xl md:text-8xl font-bold mb-4 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent animate-pulse">
-                Usman Anwar
-              </h1>
-              <div className="text-xl md:text-2xl text-gray-300 mb-8 font-light">
-                <span className="inline-block animate-shine">
-                  Web Developer
-                </span>
+            {/* Left Side - Text Content */}
+            <div className="text-left">
+              <div className="mb-8">
+                <h1 className="text-5xl md:text-7xl font-bold mb-4 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent animate-pulse">
+                  Usman Anwar
+                </h1>
+                <div className="text-xl md:text-2xl text-gray-300 mb-8 font-light">
+                  <span className="inline-block animate-shine">
+                    Web Developer
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-lg md:text-xl text-gray-400 mb-8 leading-relaxed">
+                Crafting digital experiences with modern technologies. Passionate about creating innovative web solutions
+                that make a difference.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-4 mb-8 md:mr-8">
+                <Button
+                  onClick={() => scrollToSection("projects")}
+                  className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white px-8 py-3 rounded-full transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/25"
+                >
+                  View My Work
+                </Button>
+                <Button
+                  onClick={() => scrollToSection("contact")}
+                  className="border border-cyan-500 text-cyan-400 hover:bg-cyan-500 hover:text-black px-8 py-3 rounded-full transition-all duration-300 transform hover:scale-105 bg-transparent"
+                >
+                  Get In Touch
+                </Button>
+              </div>
+
+              <div onClick={() => scrollToSection("skills")} className="cursor-pointer animate-bounce inline-block">
+                <ChevronDown className="w-8 h-8 text-cyan-400" />
               </div>
             </div>
 
-            <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-12 leading-relaxed">
-              Crafting digital experiences with modern technologies. Passionate about creating innovative web solutions
-              that make a difference.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
-              <Button
-                onClick={() => scrollToSection("projects")}
-                className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white px-8 py-3 rounded-full transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/25"
-              >
-                View My Work
-              </Button>
-              <Button
-                onClick={() => scrollToSection("contact")}
-                className="border border-cyan-500 text-cyan-400 hover:bg-cyan-500 hover:text-black px-8 py-3 rounded-full transition-all duration-300 transform hover:scale-105 bg-transparent"
-              >
-                Get In Touch
-              </Button>
-            </div>
-
-            <div onClick={() => scrollToSection("skills")} className="cursor-pointer animate-bounce">
-              <ChevronDown className="w-8 h-8 text-cyan-400 mx-auto" />
+            {/* Right Side - Interactive Image Stack */}
+            <div className="flex justify-center md:justify-end">
+                <div className="relative md:mr-16">
+                <Stack 
+                  cardDimensions={{ width: 320, height: 320 }}
+                  sensitivity={150}
+                  randomRotation={true}
+                  sendToBackOnClick={true}
+                />
+                <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 text-center">
+                  <p className="text-sm text-gray-400 mb-2">Try dragging the cards!</p>
+                  <p className="text-xs text-gray-500">Interactive 3D card stack</p>
+                </div>
+                </div>
             </div>
           </div>
         </section>
