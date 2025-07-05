@@ -42,5 +42,8 @@ body {
     transparent
   );
   background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
   animation: shine 3s ease-in-out infinite;
 }

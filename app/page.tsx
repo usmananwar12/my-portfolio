@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Github, Linkedin, Mail, ExternalLink, Code, Cpu, Database, Globe, ChevronDown } from "lucide-react"
+import { Github, Linkedin, Mail, ExternalLink, Code, Cpu, Database, Globe, ChevronDown, Send, User, MessageSquare } from "lucide-react"
+import emailjs from '@emailjs/browser'
 
 export default function Portfolio() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
@@ -15,6 +16,14 @@ export default function Portfolio() {
     animationDelay: string
     animationDuration: string
   }>>([])
+  
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    message: ''
+  })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
 
   useEffect(() => {
     setIsVisible(true)
@@ -75,6 +84,41 @@ export default function Portfolio() {
     document.getElementById(sectionId)?.scrollIntoView({ behavior: "smooth" })
   }
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    })
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    setSubmitStatus('idle')
+
+    try {
+      await emailjs.send(
+        'service_gssm733',
+        'template_fvm5v8i',
+        {
+          from_name: formData.name,
+          from_email: formData.email,
+          message: formData.message,
+          to_name: 'Usman Anwar'
+        },
+        '5pC9DSQ-9Rs0pl0Nx'
+      )
+      
+      setSubmitStatus('success')
+      setFormData({ name: '', email: '', message: '' })
+    } catch (error) {
+      console.error('EmailJS Error:', error)
+      setSubmitStatus('error')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-black text-white overflow-hidden relative">
       {/* Animated Background */}
@@ -123,8 +167,8 @@ export default function Portfolio() {
               <h1 className="text-6xl md:text-8xl font-bold mb-4 bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent animate-pulse">
                 Usman Anwar
               </h1>
-              <div className="text-xl md:text-2xl text-gray-300 mb-8 font-light relative overflow-hidden">
-                <span className="relative inline-block bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent animate-shine">
+              <div className="text-xl md:text-2xl text-gray-300 mb-8 font-light">
+                <span className="inline-block animate-shine">
                   Web Developer
                 </span>
               </div>
@@ -236,48 +280,152 @@ export default function Portfolio() {
 
         {/* Contact Section */}
         <section id="contact" className="py-20 px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-4xl md:text-5xl font-bold mb-8 bg-gradient-to-r from-cyan-400 to-purple-600 bg-clip-text text-transparent">
-              Let's Connect
-            </h2>
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl md:text-5xl font-bold mb-8 bg-gradient-to-r from-cyan-400 to-purple-600 bg-clip-text text-transparent">
+                Let's Connect
+              </h2>
 
-            <p className="text-xl text-gray-300 mb-12 max-w-2xl mx-auto">
-              Ready to bring your ideas to life? Let's discuss your next project and create something amazing together.
-            </p>
+              <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+                Ready to bring your ideas to life? Let's discuss your next project and create something amazing together.
+              </p>
+            </div>
 
-            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-              <a
-                href="mailto:usmananwar9957@gmail.com"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white px-8 py-4 rounded-full transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/25 flex items-center gap-2">
-                  <Mail className="w-5 h-5" />
-                  Email Me
-                </Button>
-              </a>
+            <div className="grid md:grid-cols-2 gap-12 items-start">
+              {/* Contact Form */}
+              <Card className="bg-white/5 backdrop-blur-lg border-white/10 p-8">
+                <CardContent className="p-0">
+                  <h3 className="text-2xl font-bold mb-6 text-white">Send me a message</h3>
+                  
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="relative">
+                      <User className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                      <input
+                        type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        placeholder="Your Name"
+                        required
+                        className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all duration-300"
+                      />
+                    </div>
 
-              <a
-                href="https://github.com/usmananwar12"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button className="border-purple-500 text-purple-400 hover:bg-purple-500 hover:text-white px-8 py-4 rounded-full transition-all duration-300 transform hover:scale-105 flex items-center gap-2 bg-transparent">
-                  <Github className="w-5 h-5" />
-                  GitHub
-                </Button>
-              </a>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        placeholder="Your Email"
+                        required
+                        className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all duration-300"
+                      />
+                    </div>
 
-              <a
-                href="https://www.linkedin.com/in/musman-anwar/"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button className="border-blue-500 text-blue-400 hover:bg-blue-500 hover:text-white px-8 py-4 rounded-full transition-all duration-300 transform hover:scale-105 flex items-center gap-2 bg-transparent">
-                  <Linkedin className="w-5 h-5" />
-                  LinkedIn
-                </Button>
-              </a>
+                    <div className="relative">
+                      <MessageSquare className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                      <textarea
+                        name="message"
+                        value={formData.message}
+                        onChange={handleInputChange}
+                        placeholder="Your Message"
+                        required
+                        rows={5}
+                        className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all duration-300 resize-none"
+                      />
+                    </div>
+
+                    <Button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white py-3 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-cyan-500/25 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-5 h-5" />
+                          Send Message
+                        </>
+                      )}
+                    </Button>
+
+                    {submitStatus === 'success' && (
+                      <div className="text-green-400 text-center py-2 bg-green-500/10 rounded-lg">
+                        Message sent successfully! I'll get back to you soon.
+                      </div>
+                    )}
+
+                    {submitStatus === 'error' && (
+                      <div className="text-red-400 text-center py-2 bg-red-500/10 rounded-lg">
+                        Failed to send message. Please try again.
+                      </div>
+                    )}
+                  </form>
+                </CardContent>
+              </Card>
+
+              {/* Contact Info */}
+              <div className="space-y-8">
+                <div>
+                  <h3 className="text-2xl font-bold mb-6 text-white">Get in touch</h3>
+                  <p className="text-gray-300 mb-8">
+                    I'm always open to discussing new projects, creative ideas, or opportunities to be part of your visions.
+                  </p>
+                </div>
+
+                <div className="space-y-6">
+                  <a
+                    href="mailto:usmananwar9957@gmail.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-4 p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-all duration-300 group"
+                  >
+                    <div className="w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                      <Mail className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-white">Email</h4>
+                      <p className="text-gray-400">usmananwar9957@gmail.com</p>
+                    </div>
+                  </a>
+
+                  <a
+                    href="https://github.com/usmananwar12"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-4 p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-all duration-300 group"
+                  >
+                    <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                      <Github className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-white">GitHub</h4>
+                      <p className="text-gray-400">github.com/usmananwar12</p>
+                    </div>
+                  </a>
+
+                  <a
+                    href="https://www.linkedin.com/in/musman-anwar/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-4 p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-all duration-300 group"
+                  >
+                    <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                      <Linkedin className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-white">LinkedIn</h4>
+                      <p className="text-gray-400">linkedin.com/in/musman-anwar</p>
+                    </div>
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
         </section>
