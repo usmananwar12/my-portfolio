@@ -56,7 +56,7 @@ function CardRotate({ children, onSendToBack, sensitivity }: CardRotateProps) {
     );
 }
 
-export default function Stack({
+function Stack({
     randomRotation = false,
     sensitivity = 200,
     cardDimensions = { width: 208, height: 208 },
@@ -133,6 +133,14 @@ export default function Stack({
                     </CardRotate>
                 );
             })}
+        </div>
+    );
+}
+
+export default function TestPage() {
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-100 p-8">
+            <Stack />
         </div>
     );
 }
